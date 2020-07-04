@@ -5,8 +5,8 @@ use Mix.Config
 # Configure the main viewport for the Scenic application
 config :elixir_snake, :viewport, %{
   name: :main_viewport,
-  size: {700, 600},
-  default_scene: {ElixirSnake.Scene.Home, nil},
+  size: {1280, 720},
+  default_scene: {ElixirSnake.Scene.Game, nil},
   drivers: [
     %{
       module: Scenic.Driver.Glfw,
