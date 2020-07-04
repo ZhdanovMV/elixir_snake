@@ -40,7 +40,7 @@ defmodule ElixirSnake.Scene.GameOver do
     graph = state.graph
             |> Graph.modify(:gameover, &text(&1, message, @text_opts))
 
-    {:noreply, %{state | on_cooldown: false, graph: graph}}
+    {:noreply, %{state | on_cooldown: false, graph: graph}, push: graph}
   end
 
   # If cooldown has passed, we can restart the game.

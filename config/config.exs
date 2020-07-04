@@ -16,6 +16,14 @@ config :elixir_snake, :viewport, %{
   ]
 }
 
+config :elixir_snake, :game_settings, %{
+  frame_ms: 192,
+  pellet_score: 1,
+  snake_starting_size: 3,
+  tile_radius: 8,
+  tile_size: 32
+}
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.

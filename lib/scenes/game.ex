@@ -1,17 +1,11 @@
 defmodule ElixirSnake.Scene.Game do
   use Scenic.Scene
 
-  import Scenic.Primitives, only: [rrect: 3, text: 3]
-
+  alias ElixirSnake.GameGraph
   alias Scenic.Graph
   alias Scenic.ViewPort
 
-  @frame_ms 192
-  @game_over_scene ElixirSnake.Scene.GameOver
-  @pellet_score 1
-  @snake_starting_size 3
-  @tile_radius 8
-  @tile_size 32
+  @game_settings Application.get_env(:elixir_snake, :game_settings)
 
   def init(_arg, opts) do
     viewport = opts[:viewport]
@@ -20,8 +14,8 @@ defmodule ElixirSnake.Scene.Game do
     {:ok, %ViewPort.Status{size: {vp_width, vp_height}}} = ViewPort.info(viewport)
 
     # How many tiles can the viewport hold in each dimension?
-    vp_tile_width = trunc(vp_width / @tile_size)
-    vp_tile_height = trunc(vp_height / @tile_size)
+    vp_tile_width = trunc(vp_width / @game_settings.tile_size)
+    vp_tile_height = trunc(vp_height / @game_settings.tile_size)
 
     # Snake always starts centered.
     snake_start_coords = {trunc(vp_tile_width / 2), trunc(vp_tile_height / 2)}
@@ -30,7 +24,7 @@ defmodule ElixirSnake.Scene.Game do
     pellet_start_coords = {vp_tile_width - 2, trunc(vp_tile_height / 2)}
 
     # Start a very simple animation timer.
-    {:ok, timer} = :timer.send_interval(@frame_ms, :frame)
+    {:ok, timer} = :timer.send_interval(@game_settings.frame_ms, :frame)
 
     # The entire game state will be held here.
     state = %{
@@ -44,7 +38,7 @@ defmodule ElixirSnake.Scene.Game do
       objects: %{
         snake: %{
           body: [snake_start_coords],
-          size: @snake_starting_size,
+          size: @game_settings.snake_starting_size,
           direction: {1, 0}
         },
         pellet: pellet_start_coords
@@ -52,8 +46,8 @@ defmodule ElixirSnake.Scene.Game do
     }
 
     graph = state.graph
-            |> draw_score(state.score)
-            |> draw_game_objects(state.objects)
+            |> GameGraph.draw_score(state.score)
+            |> GameGraph.draw_game_objects(state.objects)
 
     {:ok, state, push: graph}
   end
@@ -62,8 +56,8 @@ defmodule ElixirSnake.Scene.Game do
     state = move_snake(state)
 
     graph = state.graph
-            |> draw_game_objects(state.objects)
-            |> draw_score(state.score)
+            |> GameGraph.draw_game_objects(state.objects)
+            |> GameGraph.draw_score(state.score)
 
     {:noreply, %{state | frame_count: frame_count + 1}, push: graph}
   end
@@ -86,37 +80,6 @@ defmodule ElixirSnake.Scene.Game do
   end
 
   def handle_input(_input, _context, state), do: {:noreply, state}
-
-  # Draw the score HUD.
-  defp draw_score(graph, score) do
-    graph
-    |> text("Score: #{score}", fill: :white, translate: {@tile_size, @tile_size})
-  end
-
-  # Iterates over the object map, rendering each object.
-  defp draw_game_objects(graph, object_map) do
-    Enum.reduce(object_map, graph, fn({object_type, object_data}, graph) ->
-      draw_object(graph, object_type, object_data)
-    end)
-  end
-
-  # Snake's body is an array of coordinate pairs.
-  defp draw_object(graph, :snake, %{body: snake}) do
-    Enum.reduce(snake, graph, fn({x, y}, graph) ->
-      draw_tile(graph, x, y, fill: :lime)
-    end)
-  end
-
-  # Pellet is simply a coordinate pair.
-  defp draw_object(graph, :pellet, {pellet_x, pellet_y}) do
-    draw_tile(graph, pellet_x, pellet_y, fill: :yellow, id: :pellet)
-  end
-
-  # Draw tiles as rounded rectangles to look nice.
-  defp draw_tile(graph, x, y, opts) do
-    tile_opts = Keyword.merge([fill: :white, translate: {x * @tile_size, y * @tile_size}], opts)
-    rrect(graph, {@tile_size, @tile_size, @tile_radius}, tile_opts)
-  end
 
   # Move the snake to its next position according to the direction. Also limits the size.
   defp move_snake(%{objects: %{snake: snake}} = state) do
@@ -145,7 +108,7 @@ defmodule ElixirSnake.Scene.Game do
        when pellet_coords == snake_head_coords do
     state
     |> randomize_pellet()
-    |> add_score(@pellet_score)
+    |> add_score(@game_settings.pellet_score)
     |> grow_snake()
   end
 
@@ -180,7 +143,7 @@ defmodule ElixirSnake.Scene.Game do
   defp maybe_die(state = %{viewport: vp, objects: %{snake: %{body: snake}}, score: score}) do
     # If ANY duplicates were removed, this means we overlapped at least once
     if length(Enum.uniq(snake)) < length(snake) do
-      ViewPort.set_root(vp, {@game_over_scene, score})
+      ViewPort.set_root(vp, {ElixirSnake.Scene.GameOver, score})
     end
     state
   end

@@ -4,10 +4,10 @@ defmodule ElixirSnake do
   """
 
   def start(_type, _args) do
-    # load the viewport configuration from config
+    # Load the viewport configuration from config.
     main_viewport_config = Application.get_env(:elixir_snake, :viewport)
 
-    # start the application with the viewport
+    # Start the application with the viewport.
     children = [
       {Scenic, viewports: [main_viewport_config]}
     ]
